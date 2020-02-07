@@ -6,6 +6,9 @@ const app = express();
 
 const fs = require('fs');
 const logger = require('./logger');
+const ResponseBuilder = require('./response-builder');
+const user = require('./user');
+
 
 const config = require('config');
 const dbConfig = config.get('dbConfig');
@@ -25,10 +28,20 @@ con.connect(function(err){
   logger.log("IDM database connected!");
 });
 
-app.get('/', function(req, res){res.send("Hello World")})
+app.get('/', function(req, res){
+    responseBuilder = new ResponseBuilder(res);
+    
+})
 
 var server = app.listen(serverConfig.port, function(){
   var host = server.address().address;
   var port = server.address().port;
   logger.log(`Server listening at ${host}:${port}`);
 })
+
+
+app.post('/registerUser', function(req,res){
+  let resBuilder = new ResponseBuilder(res);
+  resBuilder = user.register(resBuilder,req.username,req.password);
+})
+
