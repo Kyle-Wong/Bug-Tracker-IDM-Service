@@ -1,12 +1,4 @@
-var errorCode = 
-{
-    0:"Done",
-
-
-    400:"Error",
-    401:"Invalid Length",
-    402:"Regex Fail",
-}
+const errors = require('./errors');
 
 module.exports = class ResponseBuilder{
     constructor(res){
@@ -19,11 +11,13 @@ module.exports = class ResponseBuilder{
     }
     status(statusCode){
         this.res = this.res.status(statusCode);
+        return this;
     }
     success(){
         this.res = this.res.status(200);
         this.json['code'] = 0;
-        this.json['message'] = errorCode[0];
+        this.json['message'] = errors.errorCode[0];
+        return this;
     }
     default(code){
         if(code >= 400)
@@ -32,13 +26,15 @@ module.exports = class ResponseBuilder{
             this.res = this.res.status(200);
     
         this.json['code'] = code;
-        this.json['message'] = errorCode[code];
+        this.json['message'] = errors.errorCode[code];
+        return this;
     }
     explicit(res,code,statusCode){
         this.res = this.res.status(statusCode);
     
         this.json['code'] = code;
-        this.json['message'] = errorCode[code];
+        this.json['message'] = errors.errorCode[code];
+        return this;
     }
     static send(responseBuilder){
         responseBuilder.res.json(responseBiulder.json);

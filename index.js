@@ -41,7 +41,10 @@ var server = app.listen(serverConfig.port, function(){
 
 
 app.post('/registerUser', function(req,res){
+  logger.log("Register User")
+  body = req.body;
+  logger.log(req.body);
   let resBuilder = new ResponseBuilder(res);
-  resBuilder = user.register(resBuilder,req.username,req.password);
+  user.register(con, resBuilder,body.email,body.username,body.password);
 })
 
