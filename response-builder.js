@@ -19,6 +19,12 @@ module.exports = class ResponseBuilder{
         this.json['message'] = errors.errorCode[0];
         return this;
     }
+    error(message){
+        this.res = this.res.status(400);
+        this.json['code'] = 400;
+        this.json['message'] = message;
+        return this;
+    }
     default(code){
         if(code >= 400)
             this.res = this.res.status(400);
@@ -29,11 +35,11 @@ module.exports = class ResponseBuilder{
         this.json['message'] = errors.errorCode[code];
         return this;
     }
-    explicit(res,code,statusCode){
+    explicit(code,statusCode, message){
         this.res = this.res.status(statusCode);
     
         this.json['code'] = code;
-        this.json['message'] = errors.errorCode[code];
+        this.json['message'] = message;
         return this;
     }
     static send(responseBuilder){

@@ -4,10 +4,14 @@
         "user": "root",
         "password": "Hybrid023k",
         "port": "3306",
-        "database": "bt_idm"
+        "database": "bt_idm",
+        "connectionLimit": "10"
     },
     "serverConfig":{
         "host": "localhost",
         "port": "9876"
+    },
+    "sessionConfig":{
+        "timeout": "900000"
     }
 }
