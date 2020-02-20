@@ -7,6 +7,10 @@
         "database": "bt_idm",
         "connectionLimit": "10"
     },
+    "projectServerConfig":{
+        "host": "localhost",
+        "port": "9875"
+    },
     "serverConfig":{
         "host": "localhost",
         "port": "9876"

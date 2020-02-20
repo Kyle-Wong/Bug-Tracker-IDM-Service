@@ -2,12 +2,18 @@ const logger = require('./logger');
 const security = require('./password');
 const errors = require('./errors');
 const session = require('./session');
+const http = require('http');
+const https = require('https');
 const DEFAULT_ACCOUNT_TYPE = 5;
 
 const USERNAME_ALREADY_EXISTS = 404;
 const USERNAME_NOT_FOUND = 405;
 const INSUFFICIENT_PRIVILEGE = 406;
 const INCORRECT_LOGIN_CREDENTIALS = 407;
+
+const config = require('config');
+const projectServerConfig = config.get('projectServerConfig'); 
+
 
 exports.register = async function(pool, resBuilder, email, username, password){
     //basic checks
@@ -35,7 +41,8 @@ exports.register = async function(pool, resBuilder, email, username, password){
             //insert user record is username is available
             logger.log("available");
             await insertUser(pool,username,email,hash,salt);
-            return resBuilder.success().end();
+            //add user to the projects server
+            addUserToProjectsServer(username,email,1,DEFAULT_ACCOUNT_TYPE);
         } else {
             logger.log("not available");
             return resBuilder.default(USERNAME_ALREADY_EXISTS).end();
@@ -44,6 +51,16 @@ exports.register = async function(pool, resBuilder, email, username, password){
         logger.log(err);
         return resBuilder.error(err).end();
     }
+
+    try{
+
+    } catch(err){
+        logger.log(err);
+    }
+
+
+    return resBuilder.success().end();
+
 }
 
 exports.login = async function(pool, resBuilder, username, password){
@@ -152,6 +169,35 @@ async function passwordMatch(pool, username, password){
     } catch(err){
         throw err;
     }
+}
+
+function addUserToProjectsServer(username, email, isActive, accountType){
+    logger.log("Sending addUser request to Projects server");
+    const jsonBody = {
+        username:username,
+        email:email,
+        is_active:isActive,
+        account_type:accountType
+    };
+    const options = {
+        host: projectServerConfig.host,
+        port: projectServerConfig.port,
+        path: "/addUser",
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }
+    logger.log(options);
+    //use https library if using port 443
+    const port = (options.port == 443) ? https : http;
+    
+    const req = http.request(options, (res)=>{});
+    req.on('error', (err) => {
+        logger.log(`Error adding ${user} to project server`);
+    })
+    req.write(JSON.stringify(jsonBody));
+    req.end();
 }
 
 
