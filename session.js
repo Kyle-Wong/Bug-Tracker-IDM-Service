@@ -1,12 +1,13 @@
 const config = require('config');
 const logger = require('./logger');
 const errors = require('./errors');
+const pool = require("./database");
 const sessionConfig = config.get('sessionConfig');
 const moment = require('moment');
 var crypto = require('crypto');
 const sessionBytes = 16;
 
-exports.verifySession = async function(pool, resBuilder, username, sessionID){
+exports.verifySession = async function(resBuilder, username, sessionID){
     /*
         Verify if session exists and is active.
 
@@ -23,7 +24,7 @@ exports.verifySession = async function(pool, resBuilder, username, sessionID){
         return resBuilder.default(errorCode).end();
     }
     //get active session
-    const sess = await exports.retrieveActiveSession(pool,username);
+    const sess = await exports.retrieveActiveSession(username);
 
     //return fail if session isn't found
     if(sess == null || sess.session_id != sessionID)
@@ -31,13 +32,13 @@ exports.verifySession = async function(pool, resBuilder, username, sessionID){
     
     if(moment(sess.lastUsedTime).isAfter(sess.expiryTime)){
         //timeout
-        exports.revokeSession(pool,username,sessionID)
+        exports.revokeSession(username,sessionID)
         return resBuilder.default(errors.SESSION_IS_CLOSED).end();
     } else {
         //valid session, update lastUsedTime
         sess.lastUsedTime = moment().format('YYYY-MM-DD HH:mm:ss');
         sess.expiryTime = moment(Date.now()).add(sessionConfig.timeout,'ms').format('YYYY-MM-DD HH:mm:ss');
-        exports.updateSession(pool,sess);
+        exports.updateSession(sess);
         return resBuilder.default(errors.DONE).end();
     }
 
@@ -55,7 +56,7 @@ exports.generateSession = function(username){
 
     return session;
 }
-exports.updateSession = async function(pool, sess){
+exports.updateSession = async function(sess){
     var query = `UPDATE sessions SET last_used_time = ?, expiry_time = ?, is_active = ?
                     WHERE username = ? AND session_id = ?`;
     try{
@@ -67,7 +68,7 @@ exports.updateSession = async function(pool, sess){
     
 }
 
-exports.insertSession = async function(pool, sess){
+exports.insertSession = async function(sess){
     
     var query = `INSERT INTO sessions VALUES(?,?,?,?,?,1)`;
     await pool.query(query,
@@ -76,7 +77,7 @@ exports.insertSession = async function(pool, sess){
     return;
     
 }
-exports.retrieveActiveSession = async function(pool, username){
+exports.retrieveActiveSession = async function(username){
     var query = `SELECT * FROM sessions WHERE username = ? AND is_active = 1`;
     try{
         const rows = await pool.query(query,[username]);
@@ -89,7 +90,7 @@ exports.retrieveActiveSession = async function(pool, username){
         throw err;
     }
 }
-exports.revokeSession = function(pool, username, sessionID){
+exports.revokeSession = function(username, sessionID){
     var query = `UPDATE sessions SET is_active = 0 WHERE username = ? AND session_id = ?`;
     pool.query(query,[username,sessionID]);
     return;

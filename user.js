@@ -2,6 +2,8 @@ const logger = require('./logger');
 const security = require('./password');
 const errors = require('./errors');
 const session = require('./session');
+const pool = require("./database");
+
 const http = require('http');
 const https = require('https');
 const DEFAULT_ACCOUNT_TYPE = 5;
@@ -15,7 +17,7 @@ const config = require('config');
 const projectServerConfig = config.get('projectServerConfig'); 
 
 
-exports.register = async function(pool, resBuilder, email, username, password){
+exports.register = async function(resBuilder, email, username, password){
     //basic checks
     var errorCode = errors.validUsername(username);
     if(errorCode != 0){
@@ -36,11 +38,11 @@ exports.register = async function(pool, resBuilder, email, username, password){
 
     //check if username exists
     try{
-        const usernameAvailable = await isUsernameAvailable(pool,username);
+        const usernameAvailable = await isUsernameAvailable(username);
         if(usernameAvailable){
             //insert user record is username is available
             logger.log("available");
-            await insertUser(pool,username,email,hash,salt);
+            await insertUser(username,email,hash,salt);
             //add user to the projects server
             addUserToProjectsServer(username,email,1,DEFAULT_ACCOUNT_TYPE);
         } else {
@@ -63,7 +65,7 @@ exports.register = async function(pool, resBuilder, email, username, password){
 
 }
 
-exports.login = async function(pool, resBuilder, username, password){
+exports.login = async function(resBuilder, username, password){
     //basic checks
     var errorCode = errors.validUsername(username);
     if(errorCode != 0){
@@ -76,18 +78,18 @@ exports.login = async function(pool, resBuilder, username, password){
 
     //check is password is correct
     try{
-        const loginSuccess = await passwordMatch(pool, username, password);
+        const loginSuccess = await passwordMatch(username, password);
         if(loginSuccess){
             logger.log("Credential match for " + username);
             //get current active session if it exists
-            const activeSession = await session.retrieveActiveSession(pool, username);
+            const activeSession = await session.retrieveActiveSession(username);
             if(activeSession != null){
                 //revoke active session if it exists
-                session.revokeSession(pool,username,activeSession.session_id);
+                session.revokeSession(username,activeSession.session_id);
             }
             //Generate a new session
             const newSession = session.generateSession(username);
-            await session.insertSession(pool,newSession);
+            await session.insertSession(newSession);
             resBuilder.json["Session"] = newSession;
             return resBuilder.success().end();
 
@@ -100,15 +102,15 @@ exports.login = async function(pool, resBuilder, username, password){
     }
 
 }
-exports.verifyPrivilege = async function(pool, resBuilder, username, required_privilege){
+exports.verifyPrivilege = async function(resBuilder, username, required_privilege){
     var errorCode = errors.validUsername(username);
     if(errorCode != 0){
         return resBuilder.default(errorCode).end();
     }
-    const code = await(exports.comparePrivilege(pool, username, required_privilege));
+    const code = await(exports.comparePrivilege(username, required_privilege));
     resBuilder.default(code).end();
 }
-exports.comparePrivilege = async function(pool, username, required_privilege){
+exports.comparePrivilege = async function(username, required_privilege){
 
     var query = `SELECT account_type FROM users WHERE username = ?`;
     try{
@@ -130,7 +132,7 @@ exports.comparePrivilege = async function(pool, username, required_privilege){
     }
 }
 
-async function insertUser(pool, username, email, hash, salt){
+async function insertUser(username, email, hash, salt){
     logger.log(`Registering ${username} with email=${email}`)
     var query = `INSERT INTO users VALUES(?,?,?,?,1,${DEFAULT_ACCOUNT_TYPE})`
     try{
@@ -141,7 +143,7 @@ async function insertUser(pool, username, email, hash, salt){
     }
     
 }
-async function isUsernameAvailable(pool, username){
+async function isUsernameAvailable(username){
     var query = "SELECT username FROM users u WHERE u.username = ?;";
     try{
         const rows = await pool.query(query,[username]);
@@ -157,7 +159,7 @@ async function isUsernameAvailable(pool, username){
         throw err;
     }
 }
-async function passwordMatch(pool, username, password){
+async function passwordMatch(username, password){
     var query = "SELECT salt, hash FROM users WHERE username = ? AND is_active = 1";
     try{
         const rows = await pool.query(query,[username]);

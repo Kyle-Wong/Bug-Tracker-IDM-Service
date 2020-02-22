@@ -2,7 +2,6 @@ const express = require('express')
 const util = require('util');
 const bodyParser = require('body-parser')
 const cookieParser = require('cookie-parser')
-const store = require('./store')
 const app = express();
 
 const fs = require('fs');
@@ -49,26 +48,26 @@ app.post('/registerUser', function(req,res){
   logger.log("Register User")
   body = req.body;
   logger.log(req.body);
-  user.register(pool, new ResponseBuilder(res),body.email,body.username,body.password);
+  user.register(new ResponseBuilder(res),body.email,body.username,body.password);
 });
 app.post('/login', (req, res) =>{
   logger.log("Login User");
   body = req.body;
   logger.log(req.body);
-  user.login(pool,new ResponseBuilder(res), body.username, body.password);
+  user.login(new ResponseBuilder(res), body.username, body.password);
 });
 
 app.post('/verifySession', function(req, res){
   logger.log("Verify Session");
   body = req.body;
   logger.log(body);
-  session.verifySession(pool,new ResponseBuilder(res), body.username, body.sessionID);
+  session.verifySession(new ResponseBuilder(res), body.username, body.sessionID);
 });
 
 app.post('/verifyPrivilege',function(req,res){
   logger.log("Verify Privilege");
   body = req.body;
   logger.log(body);
-  user.verifyPrivilege(pool, new ResponseBuilder(res), body.username, body.requiredPrivilege);
+  user.verifyPrivilege(new ResponseBuilder(res), body.username, body.requiredPrivilege);
 });
 
