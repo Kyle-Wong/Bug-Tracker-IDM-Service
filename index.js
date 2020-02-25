@@ -44,27 +44,27 @@ var server = app.listen(serverConfig.port, function(){
 })
 
 
-app.post('/registerUser', function(req,res){
+app.post('/idm/user/register', function(req,res){
   logger.log("Register User")
   body = req.body;
   logger.log(req.body);
   user.register(new ResponseBuilder(res),body.email,body.username,body.password);
 });
-app.post('/login', (req, res) =>{
+app.post('/idm/user/login', (req, res) =>{
   logger.log("Login User");
   body = req.body;
   logger.log(req.body);
   user.login(new ResponseBuilder(res), body.username, body.password);
 });
 
-app.post('/verifySession', function(req, res){
+app.post('/idm/verifySession', function(req, res){
   logger.log("Verify Session");
   body = req.body;
   logger.log(body);
   session.verifySession(new ResponseBuilder(res), body.username, body.sessionID);
 });
 
-app.post('/verifyPrivilege',function(req,res){
+app.post('/idm/verifyPrivilege',function(req,res){
   logger.log("Verify Privilege");
   body = req.body;
   logger.log(body);
