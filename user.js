@@ -80,7 +80,7 @@ exports.login = async function(resBuilder, username, password) {
       const activeSession = await session.retrieveActiveSession(username);
       if (activeSession != null) {
         //revoke active session if it exists
-        session.revokeSession(username, activeSession.session_id);
+        await session.revokeSession(username, activeSession.session_id);
       }
       //Generate a new session
       const newSession = session.generateSession(username);

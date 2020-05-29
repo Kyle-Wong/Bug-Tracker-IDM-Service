@@ -106,10 +106,10 @@ exports.retrieveActiveSession = async function(username) {
     throw err;
   }
 };
-exports.revokeSession = function(username, sessionID) {
-  var query = `UPDATE sessions SET is_active = 0 WHERE username = ? AND session_id = ?`;
+exports.revokeSession = async function(username, sessionID) {
+  var query = `UPDATE sessions SET is_active = 0 WHERE username = ?`;
   try {
-    pool.query(query, [username, sessionID]);
+    await pool.query(query, [username, sessionID]);
   } catch (e) {}
   return;
 };
